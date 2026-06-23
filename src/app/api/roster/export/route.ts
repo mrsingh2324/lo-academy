@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
     bucket: p.get("bucket") ?? undefined,
     yog: p.get("yog") ?? undefined,
     q: p.get("q") ?? undefined,
+    outcome: p.get("outcome") ?? undefined,
   });
 
   const students = await prisma.student.findMany({

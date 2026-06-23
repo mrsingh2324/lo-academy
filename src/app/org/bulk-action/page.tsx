@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function BulkAction({
   searchParams,
 }: {
-  searchParams: Promise<{ stage?: string; bucket?: string; yog?: string; q?: string }>;
+  searchParams: Promise<{ stage?: string; bucket?: string; yog?: string; q?: string; outcome?: string }>;
 }) {
   const sp = await searchParams;
   const where = studentWhereFromParams(sp);

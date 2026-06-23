@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 
-type Filter = { stage?: string; bucket?: string; yog?: string; q?: string };
+type Filter = { stage?: string; bucket?: string; yog?: string; q?: string; outcome?: string };
 
 const CHANNELS = [
   { key: "email", label: "Email", needs: "email" },

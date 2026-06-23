@@ -2,6 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { stageOptionsForBucket, STAGE_LABELS } from "@/lib/enums";
+import { OUTCOMES, OUTCOME_LABELS } from "@/lib/roster";
 
 export default function RosterFilters({
   buckets,
@@ -11,6 +12,7 @@ export default function RosterFilters({
   stage,
   bucket,
   yog,
+  outcome,
   size,
 }: {
   buckets: { name: string }[];
@@ -20,6 +22,7 @@ export default function RosterFilters({
   stage?: string;
   bucket?: string;
   yog?: string;
+  outcome?: string;
   size?: string;
 }) {
   const router = useRouter();
@@ -27,6 +30,7 @@ export default function RosterFilters({
   const [bucketSel, setBucketSel] = useState(bucket ?? "");
   const [stageSel, setStageSel] = useState(stage ?? "");
   const [yogSel, setYogSel] = useState(yog ?? "");
+  const [outcomeSel, setOutcomeSel] = useState(outcome ?? "");
   const [sizeSel, setSizeSel] = useState(size ?? "20");
 
   // Stage options cascade from the selected bucket (A→Nxtmock/TR1/TR2, B→Dev test/TR1/TR2, C→TR1, D→Not qualified).
@@ -38,6 +42,7 @@ export default function RosterFilters({
     if (stageSel) params.set("stage", stageSel);
     if (bucketSel) params.set("bucket", bucketSel);
     if (yogSel) params.set("yog", yogSel);
+    if (outcomeSel) params.set("outcome", outcomeSel);
     const sz = override.size ?? sizeSel;
     if (sz && sz !== "20") params.set("size", sz);
     router.push(`/org/roster${params.toString() ? `?${params}` : ""}`);
@@ -96,6 +101,18 @@ export default function RosterFilters({
           </option>
         ))}
       </select>
+      <select
+        value={outcomeSel}
+        onChange={(e) => setOutcomeSel(e.target.value)}
+        className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
+      >
+        <option value="">Any outcome</option>
+        {OUTCOMES.map((o) => (
+          <option key={o} value={o}>
+            {OUTCOME_LABELS[o]}
+          </option>
+        ))}
+      </select>
       <button className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700">Filter</button>
       <span className="ml-1 flex items-center gap-1 text-sm text-zinc-500">
         Show
@@ -121,6 +138,7 @@ export default function RosterFilters({
           setBucketSel("");
           setStageSel("");
           setYogSel("");
+          setOutcomeSel("");
           setSizeSel("20");
           router.push("/org/roster");
         }}

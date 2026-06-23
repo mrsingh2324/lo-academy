@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const p = req.nextUrl.searchParams;
-  const where = studentWhereFromParams({ stage: p.get("stage") ?? undefined, bucket: p.get("bucket") ?? undefined, yog: p.get("yog") ?? undefined, q: p.get("q") ?? undefined });
+  const where = studentWhereFromParams({ stage: p.get("stage") ?? undefined, bucket: p.get("bucket") ?? undefined, yog: p.get("yog") ?? undefined, q: p.get("q") ?? undefined, outcome: p.get("outcome") ?? undefined });
   const students = await prisma.student.findMany({ where, select: { externalRef: true, name: true, email: true, phone: true }, orderBy: { name: "asc" } });
   const esc = (v: string | null) => `"${(v ?? "").replace(/"/g, '""')}"`;
   const csv = ["UID,Name,Email,Phone", ...students.map((s) => [s.externalRef, s.name, s.email, s.phone].map(esc).join(","))].join("\n");
