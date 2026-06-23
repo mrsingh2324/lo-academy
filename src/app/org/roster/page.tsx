@@ -73,12 +73,20 @@ export default async function Roster({
           </p>
         </div>
         {total > 0 && (
-          <Link
-            href={`/org/bulk-action${rosterQuery(sp) ? `?${rosterQuery(sp)}` : ""}`}
-            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700"
-          >
-            Take action on all {total.toLocaleString()} →
-          </Link>
+          <div className="flex items-center gap-2">
+            <a
+              href={`/api/roster/export${rosterQuery(sp) ? `?${rosterQuery(sp)}` : ""}`}
+              className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            >
+              ⬇ Download {total.toLocaleString()} (CSV)
+            </a>
+            <Link
+              href={`/org/bulk-action${rosterQuery(sp) ? `?${rosterQuery(sp)}` : ""}`}
+              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700"
+            >
+              Take action on all {total.toLocaleString()} →
+            </Link>
+          </div>
         )}
       </div>
 

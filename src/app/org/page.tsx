@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { STAGE_LABELS } from "@/lib/enums";
 import { StageBadge } from "@/lib/ui";
 import RunJobsButton from "@/components/RunJobsButton";
+import IntakeUpload from "@/components/IntakeUpload";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,8 @@ export default async function Dashboard() {
         </div>
         <RunJobsButton pending={pendingJobs} />
       </div>
+
+      <IntakeUpload />
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
         {cards.map((c) => (
