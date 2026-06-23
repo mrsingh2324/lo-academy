@@ -35,6 +35,7 @@ model Student {
   anomalousFlow            Boolean   @default(false) // switched buckets / non-standard journey
   switchedFromBucket       String?   // original bucket before switching
   flowNote                 String?   // explanation of the anomalous flow
+  dsaEvaluation            Json?      // Bucket B multi-part DSA evaluation (parts + scores)
   currentStage             String    @default("react") // react|tr1|tr2|selected|rejected
   currentStatus            String    @default("availability_requested")
   currentAttemptId         String?

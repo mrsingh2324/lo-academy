@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getActor } from "@/lib/auth";
 import { StageBadge, StatusBadge, fmtDate } from "@/lib/ui";
 import { STAGE_LABELS, isTestStage, isPanelStage } from "@/lib/enums";
+import EvalBlock from "@/components/EvalBlock";
 import {
   AskAvailabilityButton,
   ScoreForm,
@@ -39,7 +40,7 @@ function isUrl(v: unknown): v is string {
 
 // Renders an attempt's lossless `details` JSON as a clean key/value grid.
 function AttemptDetails({ details }: { details: Record<string, unknown> }) {
-  const entries = Object.entries(details).filter(([, v]) => v !== null && v !== undefined && v !== "");
+  const entries = Object.entries(details).filter(([, v]) => v !== null && v !== undefined && v !== "" && typeof v !== "object");
   if (entries.length === 0) return null;
   return (
     <div className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
@@ -150,6 +151,14 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
         )}
       </div>
 
+      {/* DSA evaluation (Bucket B — multi-part) */}
+      {student.dsaEvaluation && (
+        <div>
+          <h2 className="mb-1 text-sm font-semibold text-zinc-700">DSA Evaluation</h2>
+          <EvalBlock title="DSA — multi-part" data={student.dsaEvaluation as Record<string, unknown>} />
+        </div>
+      )}
+
       {/* timeline */}
       <div>
         <h2 className="mb-3 text-sm font-semibold text-zinc-700">Timeline</h2>
@@ -187,6 +196,9 @@ export default async function StudentDetail({ params }: { params: Promise<{ id: 
                 {a.remarks && <p className="mt-2 text-sm text-zinc-700">Remarks: {a.remarks}</p>}
 
                 {a.details && <AttemptDetails details={a.details as Record<string, unknown>} />}
+                {(a.details as { frontendEvaluation?: Record<string, unknown> } | null)?.frontendEvaluation && (
+                  <EvalBlock title="Frontend (Dev Test) Evaluation — 3 parts" data={(a.details as { frontendEvaluation: Record<string, unknown> }).frontendEvaluation} />
+                )}
 
                 {a.panelFeedback.length > 0 && (
                   <div className="mt-3 space-y-1 rounded-lg bg-zinc-50 p-3 text-sm">
