@@ -9,16 +9,18 @@ export default async function OrgLayout({ children }: { children: React.ReactNod
   const actor = await getActor();
   if (!actor) redirect("/login");
 
-  const [users, reconCount, openQueries, switchedCount] = await Promise.all([
+  const [users, reconCount, openQueries, switchedCount, releaseCount] = await Promise.all([
     prisma.user.findMany({ where: { active: true }, orderBy: { role: "asc" } }),
     prisma.reconciliationItem.count({ where: { resolved: false } }),
     prisma.studentQuery.count({ where: { status: "open" } }),
     prisma.student.count({ where: { anomalousFlow: true } }),
+    prisma.stageAttempt.count({ where: { status: { in: ["evaluated", "needs_review"] } } }),
   ]);
 
   const nav = [
     { href: "/org", label: "Dashboard", badge: 0 },
     { href: "/org/roster", label: "Roster", badge: 0 },
+    { href: "/org/releases", label: "Releases", badge: releaseCount },
     { href: "/org/queries", label: "Queries", badge: openQueries },
     { href: "/org/switched", label: "Switched", badge: switchedCount },
     { href: "/org/reconciliation", label: "Reconciliation", badge: reconCount },

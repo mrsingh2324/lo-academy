@@ -10,6 +10,9 @@ export const DEFAULT_SETTINGS = {
   retry_cap: null as number | null, // §14.9: none; flag after 3
   retry_flag_after: 3,
   timezone: "Asia/Kolkata",
+  result_notify_delay_min: 0, // safety delay before a released result is sent (ops already confirms)
+  auto_release_results: false, // auto-release once all scores in a slot are entered + valid
+  notify_max_retries: 5, // failed-send retries before flagging needs_review
   ai_query_prompt_version: "nlq-v1",
   ai_report_prompt_version: "trreport-v1",
   external_final_portal_url: "https://final-portal.example.com/onboard",

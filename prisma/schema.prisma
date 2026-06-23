@@ -72,6 +72,10 @@ model StageAttempt {
   evaluatorId          String?
   evaluator            User?     @relation("Evaluator", fields: [evaluatorId], references: [id])
   prepDueUntil         DateTime?
+  releasedAt           DateTime? // when ops released results (gate)
+  notifiedAt           DateTime? // when the student was notified (idempotency marker)
+  needsReviewReason    String?   // why the pipeline halted (validation failure)
+  notifyAttempts       Int       @default(0) // send retry counter
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 

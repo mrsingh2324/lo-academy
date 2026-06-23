@@ -1,5 +1,15 @@
 import { prisma } from "../src/lib/prisma";
 import { onboardStudent, transition, submitResult, TransitionError } from "../src/lib/stateMachine";
+import { releaseAttempts } from "../src/lib/release";
+import { runDueJobs } from "../src/lib/jobs";
+
+// Scoring now stops at `evaluated`; releasing + running the queue drives the
+// gated notify pipeline to notified → passed/failed (and the pass/fail branch).
+async function scoreReleaseNotify(attemptId: string, ctx: { score: number; result: "pass" | "fail"; remarks?: string }) {
+  await submitResult(attemptId, { ...ctx, remarks: ctx.remarks ?? "auto" });
+  await releaseAttempts([attemptId]);
+  await runDueJobs();
+}
 
 // Lightweight assertions for §6 guards + §7 idempotency (run: npx tsx prisma/test-statemachine.ts)
 let pass = 0, fail = 0;
@@ -59,7 +69,7 @@ async function main() {
   // Bucket A: pass Nxtmock → should advance to TR1.
   const a = await onboardStudent({ externalRef: "TEST-SM-A", name: "A Test", email: "a@x.com", bucketId: bucketA.id });
   const aAttempt = await prisma.stageAttempt.findFirst({ where: { studentId: a.id, stage: "nxtmock" } });
-  await submitResult(aAttempt!.id, { score: 85, result: "pass" });
+  await scoreReleaseNotify(aAttempt!.id, { score: 85, result: "pass" });
   const aAfter = await prisma.student.findUnique({ where: { id: a.id } });
   ok(aAfter?.currentStage === "tr1", "Bucket A: Nxtmock pass → advances to TR1");
   const aTr1 = await prisma.stageAttempt.findFirst({ where: { studentId: a.id, stage: "tr1" } });
@@ -70,7 +80,7 @@ async function main() {
   const c = await onboardStudent({ externalRef: "TEST-SM-C", name: "C Test", email: "c@x.com", bucketId: bucketC.id });
   const cAttempt = await prisma.stageAttempt.findFirst({ where: { studentId: c.id, stage: "tr1" } });
   ok(cAttempt?.stage === "tr1", "Bucket C first stage is TR1");
-  await submitResult(cAttempt!.id, { score: 88, result: "pass" });
+  await scoreReleaseNotify(cAttempt!.id, { score: 88, result: "pass" });
   const cAfter = await prisma.student.findUnique({ where: { id: c.id } });
   ok(cAfter?.currentStage === "placement_pool", "Bucket C: TR1 pass → Placement pool (no TR2)");
   ok(cAfter?.finalPortalRedirectedAt != null, "Bucket C: placement redirect timestamp set");

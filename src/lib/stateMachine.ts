@@ -19,8 +19,11 @@ const ALLOWED: Record<Status, Status[]> = {
   scheduled: ["awaiting_result"],
   awaiting_result: ["under_evaluation"],
   under_evaluation: ["evaluated"],
-  evaluated: ["result_shared"],
-  result_shared: ["passed", "failed"],
+  evaluated: ["released"], // scoring stops here; ops must release
+  released: ["notified", "needs_review"], // pipeline sends, or halts for review
+  needs_review: ["released"], // re-release after fixing the data
+  notified: ["passed", "failed"], // branch only after the student is notified
+  result_shared: ["passed", "failed"], // legacy (pre-gating data)
   passed: [],
   failed: [],
 };
@@ -37,6 +40,7 @@ export interface TransitionContext {
   evaluatorId?: string;
   availabilitySheetRef?: string;
   scoreSheetRef?: string;
+  needsReviewReason?: string;
 }
 
 /**
@@ -129,14 +133,17 @@ export async function transition(
       if (ctx.scoreSheetRef) data.scoreSheetRef = ctx.scoreSheetRef;
     }
 
-    if (to === "result_shared") {
-      const result = (ctx.result ?? attempt.result) as "pass" | "fail";
-      await sendMessage(tx, {
-        studentId: attempt.studentId,
-        attemptId,
-        templateKey: result === "pass" ? "result_pass" : isTestStage(stage) ? "result_fail_test" : "result_fail_tr",
-        payload: { stage, score: attempt.score, remarks: attempt.remarks },
-      });
+    // Gating: ops releases (no send here); the notify pipeline (jobs.ts) does the
+    // actual send, then transitions to `notified`, then branches passed/failed.
+    if (to === "released") {
+      data.releasedAt = new Date();
+      data.needsReviewReason = null;
+    }
+    if (to === "notified") {
+      data.notifiedAt = new Date();
+    }
+    if (to === "needs_review") {
+      data.needsReviewReason = ctx.needsReviewReason ?? "validation failed";
     }
 
     if (to === "passed") {
@@ -245,7 +252,9 @@ async function handlePass(tx: Prisma.TransactionClient, attempt: Attempt, actorI
 // §7 rule 8 — fail follow-up.
 async function handleFail(tx: Prisma.TransactionClient, attempt: Attempt, actorId?: string | null) {
   const stage = attempt.stage as Stage;
-  if (isTestStage(stage)) {
+  // The notify pipeline may have already generated the prep/guideline before sending.
+  const hasPrep = (await tx.prepArtifact.count({ where: { attemptId: attempt.id } })) > 0;
+  if (isTestStage(stage) && !hasPrep) {
     const days = await getSetting("react_prep_days");
     const reopenAt = new Date();
     reopenAt.setDate(reopenAt.getDate() + days);
@@ -371,12 +380,13 @@ export async function submitResult(
   ctx: { score: number; result: "pass" | "fail"; remarks?: string; evaluatorId?: string },
   actorId?: string | null
 ) {
-  const order: Status[] = ["scheduled", "awaiting_result", "under_evaluation", "evaluated", "result_shared"];
-  let current = await prisma.stageAttempt.findUnique({ where: { id: attemptId } });
+  // Scoring drives the attempt up to `evaluated` ONLY. Result delivery is gated:
+  // ops must explicitly release (see releaseAttempts) to trigger the send.
+  const order: Status[] = ["scheduled", "awaiting_result", "under_evaluation", "evaluated"];
+  const current = await prisma.stageAttempt.findUnique({ where: { id: attemptId } });
   if (!current) throw new TransitionError("Attempt not found");
 
   const startIdx = order.indexOf(current.status as Status);
-  // If still in availability_requested, schedule "now" so the chain can proceed.
   if ((current.status as Status) === "availability_requested") {
     await transition(attemptId, "scheduled", { chosenSlot: new Date() }, actorId);
   }
@@ -387,16 +397,12 @@ export async function submitResult(
         ? { evaluatorId: ctx.evaluatorId }
         : to === "evaluated"
           ? { score: ctx.score, result: ctx.result, remarks: ctx.remarks }
-          : to === "result_shared"
-            ? { result: ctx.result }
-            : {};
+          : {};
     const cur = await prisma.stageAttempt.findUnique({ where: { id: attemptId } });
     if (ALLOWED[cur!.status as Status]?.includes(to)) {
       await transition(attemptId, to, stepCtx, actorId);
     }
   }
-  // result_shared -> passed | failed
-  await transition(attemptId, ctx.result === "pass" ? "passed" : "failed", { result: ctx.result }, actorId);
   return prisma.stageAttempt.findUnique({ where: { id: attemptId }, include: { student: true } });
 }
 

@@ -50,14 +50,19 @@ export function isPanelStage(stage: string): boolean {
   return stage === "tr1" || stage === "tr2";
 }
 
-// §6 state machine statuses
+// §6 state machine statuses. Result delivery is GATED: scoring stops at
+// `evaluated`; ops explicitly releases → `released` → automated pipeline →
+// `notified` → passed/failed. `needs_review` = released but validation failed.
 export const STATUSES = [
   "availability_requested",
   "scheduled",
   "awaiting_result",
   "under_evaluation",
   "evaluated",
-  "result_shared",
+  "released",
+  "needs_review",
+  "notified",
+  "result_shared", // legacy (pre-gating); kept for existing data
   "passed",
   "failed",
 ] as const;
@@ -89,6 +94,9 @@ export const STATUS_LABELS: Record<string, string> = {
   awaiting_result: "Awaiting Result",
   under_evaluation: "Under Evaluation",
   evaluated: "Evaluated",
+  released: "Released",
+  needs_review: "Needs Review",
+  notified: "Notified",
   result_shared: "Result Shared",
   passed: "Passed",
   failed: "Failed",
