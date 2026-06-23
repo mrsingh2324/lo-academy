@@ -4,7 +4,7 @@ import { StageBadge, StatusBadge } from "@/lib/ui";
 import AiQueryBox from "@/components/AiQueryBox";
 import RosterFilters from "@/components/RosterFilters";
 import { isTestStage } from "@/lib/enums";
-import type { Prisma } from "@prisma/client";
+import { studentWhereFromParams, describeFilter, rosterQuery } from "@/lib/roster";
 
 export const dynamic = "force-dynamic";
 
@@ -24,11 +24,8 @@ export default async function Roster({
   searchParams: Promise<{ stage?: string; bucket?: string; q?: string; yog?: string; page?: string; size?: string }>;
 }) {
   const sp = await searchParams;
-  const where: Prisma.StudentWhereInput = { deletedAt: null };
-  if (sp.stage) where.currentStage = sp.stage;
-  if (sp.bucket) where.bucket = { name: sp.bucket };
-  if (sp.yog && /^\d{4}$/.test(sp.yog)) where.yearOfGraduation = Number(sp.yog);
-  if (sp.q) where.OR = [{ name: { contains: sp.q } }, { email: { contains: sp.q } }, { externalRef: { contains: sp.q } }];
+  const where = studentWhereFromParams(sp);
+  const isFiltered = Boolean(sp.stage || sp.bucket || sp.yog || sp.q);
 
   const PAGE_SIZES = [20, 50, 100, 200];
   const PAGE_SIZE = PAGE_SIZES.includes(Number(sp.size)) ? Number(sp.size) : 20;
@@ -66,13 +63,23 @@ export default async function Roster({
 
   return (
     <div className="space-y-5">
-      <div className="flex items-end justify-between">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-zinc-900">Roster</h1>
           <p className="text-sm text-zinc-500">
-            {total.toLocaleString()} candidates{total > PAGE_SIZE ? ` · page ${page} of ${totalPages}` : ""}
+            <span className="font-semibold text-zinc-900">{total.toLocaleString()}</span> {isFiltered ? "students match" : "candidates"}
+            {isFiltered ? ` · ${describeFilter(sp)}` : ""}
+            {total > PAGE_SIZE ? ` · page ${page} of ${totalPages}` : ""}
           </p>
         </div>
+        {total > 0 && (
+          <Link
+            href={`/org/bulk-action${rosterQuery(sp) ? `?${rosterQuery(sp)}` : ""}`}
+            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700"
+          >
+            Take action on all {total.toLocaleString()} →
+          </Link>
+        )}
       </div>
 
       <AiQueryBox />
