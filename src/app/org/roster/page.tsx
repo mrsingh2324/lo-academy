@@ -21,11 +21,11 @@ function nextStep(stage: string, status: string): { label: string; tone: string 
 export default async function Roster({
   searchParams,
 }: {
-  searchParams: Promise<{ stage?: string; bucket?: string; q?: string; yog?: string; outcome?: string; page?: string; size?: string }>;
+  searchParams: Promise<{ stage?: string; stageStatus?: string; bucket?: string; q?: string; yog?: string; outcome?: string; progress?: string; page?: string; size?: string }>;
 }) {
   const sp = await searchParams;
   const where = studentWhereFromParams(sp);
-  const isFiltered = Boolean(sp.stage || sp.bucket || sp.yog || sp.q || sp.outcome);
+  const isFiltered = Boolean(sp.stage || sp.stageStatus || sp.bucket || sp.yog || sp.q || sp.outcome || sp.progress);
 
   const PAGE_SIZES = [20, 50, 100, 200];
   const PAGE_SIZE = PAGE_SIZES.includes(Number(sp.size)) ? Number(sp.size) : 20;
@@ -54,9 +54,11 @@ export default async function Roster({
     const u = new URLSearchParams();
     if (sp.q) u.set("q", sp.q);
     if (sp.stage) u.set("stage", sp.stage);
+    if (sp.stageStatus) u.set("stageStatus", sp.stageStatus);
     if (sp.bucket) u.set("bucket", sp.bucket);
     if (sp.yog) u.set("yog", sp.yog);
     if (sp.outcome) u.set("outcome", sp.outcome);
+    if (sp.progress) u.set("progress", sp.progress);
     if (sp.size) u.set("size", sp.size);
     u.set("page", String(p));
     return `/org/roster?${u.toString()}`;
@@ -93,7 +95,7 @@ export default async function Roster({
 
       <AiQueryBox />
 
-      <RosterFilters buckets={buckets.map((b) => ({ name: b.name }))} yogs={yogs} sizes={PAGE_SIZES} q={sp.q} stage={sp.stage} bucket={sp.bucket} yog={sp.yog} outcome={sp.outcome} size={String(PAGE_SIZE)} />
+      <RosterFilters buckets={buckets.map((b) => ({ name: b.name }))} yogs={yogs} sizes={PAGE_SIZES} q={sp.q} stage={sp.stage} stageStatus={sp.stageStatus} bucket={sp.bucket} yog={sp.yog} outcome={sp.outcome} progress={sp.progress} size={String(PAGE_SIZE)} />
 
       <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
         <table className="w-full text-sm">

@@ -12,10 +12,12 @@ export async function GET(req: NextRequest) {
   const p = req.nextUrl.searchParams;
   const where = studentWhereFromParams({
     stage: p.get("stage") ?? undefined,
+    stageStatus: p.get("stageStatus") ?? undefined,
     bucket: p.get("bucket") ?? undefined,
     yog: p.get("yog") ?? undefined,
     q: p.get("q") ?? undefined,
     outcome: p.get("outcome") ?? undefined,
+    progress: p.get("progress") ?? undefined,
   });
 
   const students = await prisma.student.findMany({

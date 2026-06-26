@@ -29,6 +29,7 @@ model Student {
   phone                    String?
   resumeUrl                String?   // candidate resume link from intake/round sheets
   yearOfGraduation         Int?      // YOG from intake sheet
+  cycle                    Int?      // cohort/cycle number (1..11+); NxtMock applies from cycle 5
   bucketId                 String?
   bucket                   Bucket?   @relation(fields: [bucketId], references: [id])
   offlineClearedAt         DateTime?
@@ -36,6 +37,7 @@ model Student {
   switchedFromBucket       String?   // original bucket before switching
   flowNote                 String?   // explanation of the anomalous flow
   dsaEvaluation            Json?      // Bucket B multi-part DSA evaluation (parts + scores)
+  placementProfile         Json?      // placement-pool record: eligible role, placement status, company, CTC, placed-through, job prefs, recording/resume URLs (Main tab of the placement-pool sheet)
   currentStage             String    @default("react") // react|tr1|tr2|selected|rejected
   currentStatus            String    @default("availability_requested")
   currentAttemptId         String?
